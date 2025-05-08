@@ -229,6 +229,7 @@ type runtimeError =
   | OutOfBound(int, int)
   | DivisionByZero
   | AnyError(string)
+  | WIP(string)
 exception RuntimeError(runtimeError)
 
 let raiseRuntimeError = e => raise(RuntimeError(e))
@@ -649,6 +650,12 @@ let arityOf = p =>
   | Print => Exactly(1)
   | Next => Exactly(1)
   | Cons => Exactly(2)
+  | ZeroP => Exactly(1)
+  | StringAppend => AtLeast(0)
+  | List => AtLeast(0)
+  | EmptyP => Exactly(1)
+  | First => Exactly(1)
+  | Rest => Exactly(1)
   }
 
 exception Impossible(string)
@@ -994,8 +1001,9 @@ and doEv = (exp: expression<printAnn>, stk: stack) =>
       )
       return(v)(stk)
     }
-  | Let(xes, b) => transitionLet(exp.ann, list{}, xes, b, stk)
-  | Letrec(xes, b) => transitionLetrec(exp.ann, xes, b, stk)
+  | Let(LetKind.Plain, xes, b) => transitionLet(exp.ann, list{}, xes, b, stk)
+  | Let(LetKind.Nested, _xes, _b) => raiseRuntimeError(WIP("let*"))
+  | Let(LetKind.Recursive, xes, b) => transitionLetrec(exp.ann, xes, b, stk)
 
   | Bgn(es, e) => transitionBgn(exp.ann, es, e, stk)
 
@@ -1034,6 +1042,8 @@ and doEv = (exp: expression<printAnn>, stk: stack) =>
         stk,
       ),
     )
+  | And(_es) => raiseRuntimeError(WIP("logical and"))
+  | Or(_es) => raiseRuntimeError(WIP("logical or"))
   }
 and transitionLetrec = (_ann, _xes: list<bind<printAnn>>, _b: block<printAnn>, _stk: stack) => {
   raiseRuntimeError(AnyError("letrec is no longer supported"))

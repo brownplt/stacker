@@ -18,6 +18,11 @@ module CommonCodeMirror = {
   external make: (~value: string, ~readOnly: bool, ~onChange: string => unit) => React.element =
     "default"
 }
+module ScalaCodeMirror = {
+  @react.component @module("./my-code-mirror_scala")
+  external make: (~value: string, ~readOnly: bool, ~onChange: string => unit) => React.element =
+    "default"
+}
 
 @react.component
 let make = (~syntax, ~program, ~readOnly, ~setProgram) => {
@@ -37,6 +42,7 @@ let make = (~syntax, ~program, ~readOnly, ~setProgram) => {
   | JavaScript => <JavaScriptCodeMirror value=program readOnly={readOnly} onChange={onChange} />
   | Python => <PythonCodeMirror value=program readOnly={readOnly} onChange={onChange} />
   | Pseudo => <CommonCodeMirror value=program readOnly={readOnly} onChange={onChange} />
+  | Scala => <ScalaCodeMirror value=program readOnly={readOnly} onChange={onChange} />
   }
   // let onChange = evt => {
   //   let s = ReactEvent.Form.currentTarget(evt)["value"]

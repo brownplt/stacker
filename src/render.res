@@ -46,12 +46,14 @@ module Syntax = {
     | Python
     | JavaScript
     | Pseudo
+    | Scala
   let toString = t => {
     switch t {
     | Lispy => "Lispy"
     | Python => "Python"
     | JavaScript => "JavaScript"
     | Pseudo => "Pseudo"
+    | Scala => "Scala"
     }
   }
   let fromString = s => {
@@ -61,11 +63,14 @@ module Syntax = {
     | "Python" => Some(Python)
     | "JS" => Some(JavaScript)
     | "JavaScript" => Some(JavaScript)
+    | "PC" => Some(Pseudo)
     | "Pseudo" => Some(Pseudo)
+    | "SC" => Some(Scala)
+    | "Scala" => Some(Scala)
     | _ => None
     }
   }
-  let all = [Lispy, Python, JavaScript, Pseudo]
+  let all = [Lispy, Python, JavaScript, Pseudo, Scala]
 }
 
 let id = x => x
@@ -192,6 +197,7 @@ let render = (sk, holeText, s, srcMap: kindedSourceLocation => option<sourceLoca
     | JavaScript => JSPrinter.printName(x)
     | Python => PYPrinter.printName(x)
     | Pseudo => PCPrinter.printName(x)
+    | Scala => SCPrinter.printName(x)
     }
 
   let printTerm = x =>
@@ -200,6 +206,7 @@ let render = (sk, holeText, s, srcMap: kindedSourceLocation => option<sourceLoca
     | JavaScript => JSPrinter.printStandAloneTerm(x)
     | Python => PYPrinter.printStandAloneTerm(x)
     | Pseudo => PCPrinter.printStandAloneTerm(x)
+    | Scala => SCPrinter.printStandAloneTerm(x)
     }
 
   let printOutput = x =>
@@ -208,6 +215,7 @@ let render = (sk, holeText, s, srcMap: kindedSourceLocation => option<sourceLoca
     | JavaScript => JSPrinter.printOutput(~sep="\n", x)
     | Python => PYPrinter.printOutput(~sep="\n", x)
     | Pseudo => PCPrinter.printOutput(~sep="\n", x)
+    | Scala => SCPrinter.printOutput(~sep="\n", x)
     }
 
   let dummyAnn = it => {
@@ -497,6 +505,7 @@ let render = (sk, holeText, s, srcMap: kindedSourceLocation => option<sourceLoca
         )}), found ${Int.toString(index)}.`
     | DivisionByZero => `Division by zero`
     | AnyError(message) => message
+    | WIP(string) => `Support for ${string} is WIP`
     }
   }
 

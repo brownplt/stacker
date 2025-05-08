@@ -1,12 +1,13 @@
 {
-  "name": "stacker-2023",
+  "name": "stacker",
   "private": true,
   "scripts": {
     "build-smol-parser": "npx lezer-generator src/codemirror-lang_smol/smol.grammar > src/codemirror-lang_smol/parser.js",
     "build-javascript-parser": "npx lezer-generator src/codemirror-lang_javascript/javascript.grammar > src/codemirror-lang_javascript/parser.js",
     "build-python-parser": "npx lezer-generator src/codemirror-lang_python/python.grammar > src/codemirror-lang_python/parser.js",
     "build-common-parser": "npx lezer-generator src/codemirror-lang_common/common.grammar > src/codemirror-lang_common/parser.js",
-    "build-parser": "npm run build-smol-parser && npm run build-javascript-parser && npm run build-python-parser && npm run build-common-parser",
+    "build-scala-parser": "npx lezer-generator src/codemirror-lang_scala/scala.grammar > src/codemirror-lang_scala/parser.js",
+    "build-parser": "npm run build-smol-parser && npm run build-javascript-parser && npm run build-python-parser && npm run build-common-parser && npm run build-scala-parser",
     "rescript": "rescript clean && rescript build -w",
     "webpack": "npx webpack --mode development",
     "webpack-build": "npx webpack --mode production",
