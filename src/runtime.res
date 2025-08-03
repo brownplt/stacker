@@ -1,6 +1,6 @@
 open SExpression
 open! SMoL
-open Primitive
+open! Primitive
 
 type primitive = Primitive.t
 
@@ -132,6 +132,7 @@ and contextFrameNode =
       option<block<printAnn>>,
     )
   | Bgn1((unit, sourceLocation), list<expression<printAnn>>, expression<printAnn>)
+  | While1((unit, sourceLocation), list<expression<printAnn>>, expression<printAnn>)
 and contextFrame = annotated<contextFrameNode, printAnn>
 
 type frame<'base> = {ctx: pile<contextFrame, 'base>, env: environment}
@@ -151,6 +152,7 @@ let holeOfFrame = (f: contextFrame): sourceLocation => {
   | If1(((), srcLoc), _, _) => srcLoc
   | Cnd1(((), srcLoc), _, _, _) => srcLoc
   | Bgn1(((), srcLoc), _, _) => srcLoc
+  | While1(((), srcLoc), _, _) => srcLoc
   }
 }
 
@@ -165,6 +167,7 @@ let valuesOfFrame = (f: contextFrame): list<(value, sourceLocation)> => {
   | If1(_, _, _) => list{}
   | Cnd1(_, _, _, _) => list{}
   | Bgn1(_, _, _) => list{}
+  | While1(_, _, _) => list{}
   }
 }
 
@@ -942,6 +945,11 @@ and handleCtxFrame = (v: value, ctxFrame, stk: stack) => {
     | true => doEv(e_thn, stk)
     | false => doEv(e_els, stk)
     }
+  | While1(((), _srcLoc), es_thn, itself) =>
+    switch asLgc(v) {
+    | true => transitionBgn(ctxFrame.ann, es_thn, itself, stk)
+    | false => return(Con(Uni))(stk)
+    }
   | Bgn1(((), _srcLoc), es, e) => transitionBgn(ctxFrame.ann, es, e, stk)
   | Yield1((), _srcLoc) =>
     // switch stk {}
@@ -1044,6 +1052,17 @@ and doEv = (exp: expression<printAnn>, stk: stack) =>
     )
   | And(_es) => raiseRuntimeError(WIP("logical and"))
   | Or(_es) => raiseRuntimeError(WIP("logical or"))
+  | While(e_cnd, es_thn) =>
+    doEv(
+      e_cnd,
+      consCtx(
+        {
+          it: While1(((), e_cnd.ann.sourceLocation), es_thn, exp),
+          ann: exp.ann,
+        },
+        stk,
+      ),
+    )
   }
 and transitionLetrec = (_ann, _xes: list<bind<printAnn>>, _b: block<printAnn>, _stk: stack) => {
   raiseRuntimeError(AnyError("letrec is no longer supported"))
@@ -1085,16 +1104,15 @@ and transitionBlock = ({it: b, ann}: block<printAnn>, isGen, env: environment, s
     )
   | BCons(t, b) =>
     switch t.it {
-    | Exp(exp) => {
-        // Js.Console.log(exp.ann.sourceLocation)
-        doEv(
-          exp,
-          add_pile(
-            {ctx: new_pile({isGen, base: {ann, it: BExp(((), exp.ann.sourceLocation), b)}}), env},
-            stk,
-          ),
-        )
-      }
+    | Exp(exp) =>
+      // Js.Console.log(exp.ann.sourceLocation)
+      doEv(
+        exp,
+        add_pile(
+          {ctx: new_pile({isGen, base: {ann, it: BExp(((), exp.ann.sourceLocation), b)}}), env},
+          stk,
+        ),
+      )
     | Def(d) =>
       switch d.it {
       | Var(x, exp) =>

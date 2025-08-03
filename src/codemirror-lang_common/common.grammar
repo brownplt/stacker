@@ -7,6 +7,7 @@ expression {
   kw<"if"> |
   kw<"else"> |
   kw<"return"> |
+  kw<"while"> |
   kw<"raise"> |
   kw<"lam"> |
   kw<"end"> |

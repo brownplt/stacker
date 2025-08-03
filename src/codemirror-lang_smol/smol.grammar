@@ -4,6 +4,7 @@ expression {
   kw<"deffun"> |
   kw<"defvar"> |
   kw<"yield"> |
+  kw<"while"> |
   kw<"set!"> |
   kw<"if"> |
   kw<"let"> |
