@@ -1143,7 +1143,7 @@ and transitionBlock = ({it: b, ann}: block<printAnn>, isGen, env: environment, s
         }
       | GFun(f, xs, fb) => {
           let v = makeFun(
-            false,
+            true,
             xs->List.toArray,
             fb,
             env,
@@ -1195,7 +1195,7 @@ and transitionPrg = ({ann, it: p}, env: environment) => {
         }
       | GFun(f, xs, fb) => {
           let v = makeFun(
-            false,
+            true,
             xs->List.toArray,
             fb,
             env,
