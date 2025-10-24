@@ -16,12 +16,12 @@ let randomIntOfRandom = random => {
 }
 
 let makeRandomInt = seed => {
-  // If I don't wrap the function in an array, Rescript will automatically collapse
-  // the two arrows and eta-expand the first function.
   randomIntOfRandom(make_random(seed))
 }
 
 let randomInt = ref(makeRandomInt(Js.Math.random()->Float.toString))
+
+let used_addresses = ref(Set.make())
 
 type pile<'topping, 'base> = {topping: list<'topping>, base: 'base}
 let new_pile = base => {topping: list{}, base}
@@ -290,8 +290,21 @@ let xsOfTerms = (ts: list<term<printAnn>>) => {
 //   (list{...ts, SMoL.Exp(e0)}, e)
 // }
 
-let newHavId = () => randomInt.contents(100, 1000)
-let newEnvId = () => randomInt.contents(1000, 10000)
+let first_not_used_addressed = (gen: unit => int) => {
+  let rec loop = () => {
+    let addr = gen()
+    if Set.has(used_addresses.contents, addr) {
+      loop()
+    } else {
+      Set.add(used_addresses.contents, addr)
+      addr
+    }
+  }
+  () => loop()
+}
+
+let newHavId = first_not_used_addressed(() => randomInt.contents(100, 1000))
+let newEnvId = first_not_used_addressed(() => randomInt.contents(1000, 10000))
 
 let firstState = ref(true)
 
@@ -1404,6 +1417,7 @@ let load = (program: program<printAnn>, randomSeed: string, p: bool) => {
   allHavs := list{}
   stdout := list{}
   printTopLevel := p
+  used_addresses := Set.make()
   randomInt := makeRandomInt(randomSeed)
 
   // now let's get started
