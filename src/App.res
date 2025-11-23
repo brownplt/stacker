@@ -137,6 +137,7 @@ let make = () => {
     Syntax.fromString(syntaxAtURL)->Option.getOr(Lispy)
   })
   let (printTopLevel, setPrintTopLevel) = React.useState(_ => printTopLevelAtURL)
+  let (recycleHeapBoxes, setRecycleHeapBoxes) = React.useState(_ => false)
   let (randomSeed: randomSeedConfig, setRandomSeed) = React.useState(_ => {
     if randomSeedAtURL == "" {
       {isSet: false, randomSeed: new_randomSeed()}
@@ -185,7 +186,12 @@ let make = () => {
 
     | program => {
         open SExpression
-        let s: Runtime.state = Runtime.load(program, randomSeed.randomSeed, printTopLevel)
+        let s: Runtime.state = Runtime.load(
+          program,
+          randomSeed.randomSeed,
+          printTopLevel,
+          recycleHeapBoxes,
+        )
         let srcMap: kindedSourceLocation => option<sourceLocation> = {
           let map = program.ann.print->Print.toSourceMap(stringOfKindedSourceLocation)
           srcLoc => {
@@ -469,13 +475,23 @@ let make = () => {
       </label>
       <br />
       <label>
-        {React.string("Print the values of top-level expressions")}
         <input
           type_="checkbox"
           disabled={is_running}
           checked={printTopLevel}
           onChange={_ => setPrintTopLevel(v => !v)}
         />
+        {React.string("Print the values of top-level expressions")}
+      </label>
+      <br />
+      <label>
+        <input
+          type_="checkbox"
+          disabled={is_running}
+          checked={recycleHeapBoxes}
+          onChange={_ => setRecycleHeapBoxes(v => !v)}
+        />
+        {React.string("Garbage Collection (GC)")}
       </label>
     </details>
   }
@@ -497,8 +513,7 @@ let make = () => {
       id="program-source"
       style={switch editorWidth {
       | None => {}
-      | Some(editorWidth) =>
-        ReactDOM.Style.make(~width=`calc(${Belt.Int.toString(editorWidth)}px - 0.5ex)`, ())
+      | Some(editorWidth) => {width: `calc(${Belt.Int.toString(editorWidth)}px - 0.5ex)`}
       }}>
       {exampleProgramsAndStopButtonShortcut}
       {editorConfig}
@@ -556,7 +571,8 @@ let make = () => {
         </li>
         {if readOnlyMode {
           <li>
-            <a href={make_url(syntax->Syntax.toString, "", hole, -1, program, false, printTopLevel)}>
+            <a
+              href={make_url(syntax->Syntax.toString, "", hole, -1, program, false, printTopLevel)}>
               {React.string("✎ edit")}
             </a>
           </li>
