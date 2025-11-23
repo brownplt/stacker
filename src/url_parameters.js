@@ -9,8 +9,9 @@ export const holeAtURL = urlParams.get('hole') || "";
 export const nNextAtURL = parseInt(urlParams.get('nNext') || "-1");
 export const programAtURL = urlParams.get('program') || "";
 export const readOnlyMode = urlParams.get('readOnlyMode') !== null;
+export const gcAtURL = urlParams.get('gc') !== null;
 export const printTopLevelAtURL = urlParams.get('printOnRequest') === null;
-export const make_url = (syntax, randomSeed, hole, nNext, program, readOnlyMode, printTopLevel) => {
+export const make_url = (syntax, randomSeed, hole, nNext, program, readOnlyMode, gc, printTopLevel) => {
     const params = new URLSearchParams();
     params.set('syntax', syntax);
     params.set('randomSeed', randomSeed);
@@ -19,6 +20,9 @@ export const make_url = (syntax, randomSeed, hole, nNext, program, readOnlyMode,
     params.set('program', program);
     if (readOnlyMode) {
         params.set('readOnlyMode', "");
+    }
+    if (gc) {
+        params.set('gc', "");
     }
     if (!printTopLevel) {
         params.set('printOnRequest', "");

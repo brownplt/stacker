@@ -7,9 +7,10 @@ open Render
 @module("./url_parameters") external holeAtURL: string = "holeAtURL"
 @module("./url_parameters") external nNextAtURL: int = "nNextAtURL"
 @module("./url_parameters") external programAtURL: string = "programAtURL"
+@module("./url_parameters") external gcAtURL: bool = "gcAtURL"
 @module("./url_parameters") external readOnlyMode: bool = "readOnlyMode"
 @module("./url_parameters")
-external make_url: (string, string, string, int, string, bool, bool) => string = "make_url"
+external make_url: (string, string, string, int, string, bool, bool, bool) => string = "make_url"
 @scope("window") @val external openPopUp: string => unit = "openPopUp"
 
 exception Impossible
@@ -137,7 +138,7 @@ let make = () => {
     Syntax.fromString(syntaxAtURL)->Option.getOr(Lispy)
   })
   let (printTopLevel, setPrintTopLevel) = React.useState(_ => printTopLevelAtURL)
-  let (recycleHeapBoxes, setRecycleHeapBoxes) = React.useState(_ => false)
+  let (recycleHeapBoxes, setRecycleHeapBoxes) = React.useState(_ => gcAtURL)
   let (randomSeed: randomSeedConfig, setRandomSeed) = React.useState(_ => {
     if randomSeedAtURL == "" {
       {isSet: false, randomSeed: new_randomSeed()}
@@ -270,6 +271,7 @@ let make = () => {
         nNext,
         program,
         readOnlyMode,
+        recycleHeapBoxes,
         printTopLevel,
       ),
     )
@@ -572,7 +574,16 @@ let make = () => {
         {if readOnlyMode {
           <li>
             <a
-              href={make_url(syntax->Syntax.toString, "", hole, -1, program, false, printTopLevel)}>
+              href={make_url(
+                syntax->Syntax.toString,
+                "",
+                hole,
+                -1,
+                program,
+                false,
+                recycleHeapBoxes,
+                printTopLevel,
+              )}>
               {React.string("✎ edit")}
             </a>
           </li>
