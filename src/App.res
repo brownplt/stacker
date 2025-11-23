@@ -497,8 +497,7 @@ let make = () => {
       id="program-source"
       style={switch editorWidth {
       | None => {}
-      | Some(editorWidth) =>
-        ReactDOM.Style.make(~width=`calc(${Belt.Int.toString(editorWidth)}px - 0.5ex)`, ())
+      | Some(editorWidth) => {width: `calc(${Belt.Int.toString(editorWidth)}px - 0.5ex)`}
       }}>
       {exampleProgramsAndStopButtonShortcut}
       {editorConfig}
@@ -556,7 +555,8 @@ let make = () => {
         </li>
         {if readOnlyMode {
           <li>
-            <a href={make_url(syntax->Syntax.toString, "", hole, -1, program, false, printTopLevel)}>
+            <a
+              href={make_url(syntax->Syntax.toString, "", hole, -1, program, false, printTopLevel)}>
               {React.string("✎ edit")}
             </a>
           </li>
