@@ -23,6 +23,8 @@ let randomInt = ref(makeRandomInt(Js.Math.random()->Float.toString))
 
 let used_addresses = ref(Set.make())
 
+let gc = ref(false)
+
 type pile<'topping, 'base> = {topping: list<'topping>, base: 'base}
 let new_pile = base => {topping: list{}, base}
 let add_pile = (new_topping, {topping, base}) => {topping: list{new_topping, ...topping}, base}
@@ -67,6 +69,7 @@ module EnvironmentID = {
 
 type rec environmentFrame = {
   id: EnvironmentID.t,
+  useful: ref<bool>,
   content: array<(annotated<symbol, printAnn>, ref<(bool, option<value>)>)>,
 }
 and generatorStatus =
@@ -78,10 +81,12 @@ and bodyBase = {isGen: option<generator>, base: bodyBaseBase}
 and environment = list<environmentFrame>
 and vector = {
   id: int,
+  useful: ref<bool>,
   contents: array<(bool, value)>,
 }
 and function = {
   id: int,
+  useful: ref<bool>,
   isGen: bool,
   name: ref<option<string>>,
   sourceLocation: kindedSourceLocation,
@@ -92,6 +97,7 @@ and function = {
 }
 and generator = {
   id: int,
+  useful: ref<bool>,
   status: ref<generatorStatus>,
 }
 and value =
@@ -196,6 +202,7 @@ let makePrimitiveName = name => {
 let initialEnv: environment = list{
   {
     id: Primordial,
+    useful: ref(true),
     content: [],
   },
 }
@@ -384,6 +391,7 @@ let makeTopLevel = (env, xs): environment => {
   let id = EnvironmentID.TopLevel
   let frm = {
     id,
+    useful: ref(true),
     content: Js.Array.map(x => (x, ref((false, None))), xs),
   }
   let env = list{frm, ...env}
@@ -399,6 +407,7 @@ let extend = (env, xs): environment => {
   let id = EnvironmentID.Extended(newEnvId())
   let frm = {
     id,
+    useful: ref(true),
     content: Js.Array.map(x => (x, ref((false, None))), xs),
   }
   let env = list{frm, ...env}
@@ -518,6 +527,7 @@ let makeFun = (isGen, xs, b, env, sourceLocation, print) => {
   let v: value = VFun({
     id,
     isGen,
+    useful: ref(true),
     xs,
     body: b,
     env,
@@ -702,7 +712,7 @@ and yield = (v: value, s: stack): state => {
 }
 and make_vector = (vs: list<value>) => {
   let id = newHavId()
-  let v = Vec({id, contents: vs->List.map(v => (false, v))->List.toArray})
+  let v = Vec({id, useful: ref(true), contents: vs->List.map(v => (false, v))->List.toArray})
   allHavs := list{v, ...allHavs.contents}
   return(v)
 }
@@ -729,7 +739,7 @@ and delta = (ann, p, vs) =>
   | (Cmp(Ne), list{v, ...vs}) => return(deltaCmp((a, b) => a != b, v, vs))
   | (VecNew, vs) => {
       let id = newHavId()
-      let v = Vec({id, contents: vs->List.map(v => (false, v))->List.toArray})
+      let v = Vec({id, useful: ref(true), contents: vs->List.map(v => (false, v))->List.toArray})
       allHavs := list{v, ...allHavs.contents}
       return(v)
     }
@@ -1287,7 +1297,7 @@ and doApp = (v, vs, stk): state => {
 
       if isGen {
         let id = newHavId()
-        let v = VGen({id, status: ref(Fresh(b, env))})
+        let v = VGen({id, useful: ref(true), status: ref(Fresh(b, env))})
         allHavs := list{v, ...allHavs.contents}
         Continuing(Returning(v, stk))
         // return(v)(stk)
@@ -1410,7 +1420,7 @@ and doBlk = (b: block<printAnn>, isGen, stk: stack): state => {
   transitionBlock(b, isGen, env, stk)
 }
 
-let load = (program: program<printAnn>, randomSeed: string, p: bool) => {
+let load = (program: program<printAnn>, randomSeed: string, p: bool, recycleHeapBoxes) => {
   // initialize all global things
   firstState := true
   allEnvs := list{}
@@ -1418,6 +1428,7 @@ let load = (program: program<printAnn>, randomSeed: string, p: bool) => {
   stdout := list{}
   printTopLevel := p
   used_addresses := Set.make()
+  gc := recycleHeapBoxes
   randomInt := makeRandomInt(randomSeed)
 
   // now let's get started
@@ -1447,7 +1458,7 @@ let doNext = (generator, stk) => {
   }
 }
 
-let transition = (state: continuing_state): state => {
+let reduction = (state: continuing_state): state => {
   try {
     firstState := false
     unmarkEnvs()
@@ -1468,4 +1479,133 @@ let transition = (state: continuing_state): state => {
   } catch {
   | RuntimeError(err) => Terminated(Err(err))
   }
+}
+
+let rec useful_value = (value: value) => {
+  switch value {
+  | Con(_) => ()
+  | VFun(v) =>
+    if !v.useful.contents {
+      v.useful := true
+      useful_environment(v.env)
+    }
+  | VGen(v) => useful_generator(v)
+  | Vec(v) => useful_vector(v)
+  }
+}
+and useful_generator = v => {
+  if !v.useful.contents {
+    v.useful := true
+    switch v.status.contents {
+    | Fresh(_, env) => useful_environment(env)
+    | Suspended(_, env) => useful_environment(env)
+    | _ => ()
+    }
+  }
+}
+and useful_vector = v => {
+  if !v.useful.contents {
+    v.useful := true
+    v.contents->Array.forEach(((_, v)) => useful_value(v))
+  }
+}
+and useful_environment = (environment: environment) => {
+  switch environment {
+  | list{} => ()
+  | list{f, ...env} =>
+    if !f.useful.contents {
+      f.useful := true
+      f.content->Array.forEach(((_, rhs)) => {
+        let (_, v) = rhs.contents
+        v->Option.forEach(useful_value)
+      })
+      useful_environment(env)
+    }
+  }
+}
+
+let useful_redex = (redex: redex) => {
+  switch redex.it {
+  | Applying(value, vs) => {
+      useful_value(value)
+      vs->List.forEach(useful_value)
+    }
+  | Setting(_, value) => useful_value(value)
+  | VecSetting(vector, _, value) => {
+      useful_vector(vector)
+      useful_value(value)
+    }
+  | Printing(value) => useful_value(value)
+  | Yielding(value) => useful_value(value)
+  | Nexting(generator) => useful_generator(generator)
+  }
+}
+
+let useful_body_frame = (frame: frame<bodyBase>) => useful_environment(frame.env)
+
+let useful_program_frame = (frame: frame<programBase>) => useful_environment(frame.env)
+
+let useful_stack = (stack: stack) => {
+  stack.topping->List.forEach(useful_body_frame)
+  useful_program_frame(stack.base)
+}
+
+let collect_garbage = (state: state) => {
+  // Mark all environment frames as not useful
+  allEnvs.contents->List.forEach(env => {
+    env
+    ->List.head
+    ->Option.forEach(frame => {
+      frame.useful := false
+    })
+  })
+  // Mark all heap allocated value as not useful
+  allHavs.contents->List.forEach(v => {
+    switch v {
+    | VFun(v) => v.useful := false
+    | VGen(v) => v.useful := false
+    | Vec(v) => v.useful := false
+    | _ => ()
+    }
+  })
+  switch state {
+  | Terminated(Err(ExpectButGiven(_, value))) => useful_value(value)
+  | Terminated(Err(_))
+  | Terminated(Tm) => ()
+  | Continuing(Returning(value, stack)) => {
+      useful_value(value)
+      useful_stack(stack)
+    }
+  | Continuing(Entering(_entrance, _block, environment, stack)) => {
+      useful_environment(environment)
+      useful_stack(stack)
+    }
+  | Continuing(Reducing(redex, stack)) => {
+      useful_redex(redex)
+      useful_stack(stack)
+    }
+  }
+  // Filter out not useful environment frames
+  allEnvs :=
+    allEnvs.contents->List.filter(env => {
+      env->List.head->Option.mapOr(true, frame => frame.useful.contents)
+    })
+  // Filter out not useful heap-allocated values
+  allHavs :=
+    allHavs.contents->List.filter(v => {
+      switch v {
+      | VFun(v) => v.useful.contents
+      | VGen(v) => v.useful.contents
+      | Vec(v) => v.useful.contents
+      | _ => true
+      }
+    })
+}
+
+let transition = (state: continuing_state): state => {
+  let state = reduction(state)
+  if gc.contents {
+    collect_garbage(state)
+  }
+  state
 }
