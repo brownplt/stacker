@@ -1033,7 +1033,8 @@ and doEv = (exp: expression<printAnn>, stk: stack) =>
       return(v)(stk)
     }
   | Let(LetKind.Plain, xes, b) => transitionLet(exp.ann, list{}, xes, b, stk)
-  | Let(LetKind.Nested, _xes, _b) => raiseRuntimeError(WIP("let*"))
+  | Let(LetKind.Nested, _xes, _b) =>
+    raiseRuntimeError(AnyError("let* is no longer supported, please use nested let instead."))
   | Let(LetKind.Recursive, xes, b) => transitionLetrec(exp.ann, xes, b, stk)
 
   | Bgn(es, e) => transitionBgn(exp.ann, es, e, stk)
