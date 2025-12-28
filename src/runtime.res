@@ -1088,7 +1088,7 @@ and doEv = (exp: expression<printAnn>, stk: stack) =>
     )
   }
 and transitionLetrec = (_ann, _xes: list<bind<printAnn>>, _b: block<printAnn>, _stk: stack) => {
-  raiseRuntimeError(AnyError("letrec is no longer supported"))
+  raiseRuntimeError(AnyError("letrec is no longer supported, please use let+defvar instead."))
 }
 and transitionLet = (ann, xvs, xes: list<bind<printAnn>>, b, stk: stack) => {
   switch xes {
