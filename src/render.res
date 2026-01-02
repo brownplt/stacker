@@ -31,6 +31,7 @@ let substituteById = (p: print<'id>, id: 'id, q: print<'id>): print<'id> => {
     }
   }
   let r = sub(p)
+
   // if count.contents != 1 {
   //   Js.Console.log("Weird thing happenned when trying to replace")
   //   Js.Console.log2("within", p)
@@ -75,8 +76,8 @@ module Syntax = {
 
 let id = x => x
 
-@module("./highlight") external highlight: string => unit = "highlight"
-@module("./highlight") external lowlight: string => unit = "lowlight"
+@module("./highlight.js") external highlight: string => unit = "highlight"
+@module("./highlight.js") external lowlight: string => unit = "lowlight"
 
 let array_interleave = (arr, sep) => {
   if Array.length(arr) <= 1 {

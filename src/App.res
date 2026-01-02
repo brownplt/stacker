@@ -1,15 +1,15 @@
 open SMoL
 open Render
 
-@module("./url_parameters") external syntaxAtURL: string = "syntaxAtURL"
-@module("./url_parameters") external printTopLevelAtURL: bool = "printTopLevelAtURL"
-@module("./url_parameters") external randomSeedAtURL: string = "randomSeedAtURL"
-@module("./url_parameters") external holeAtURL: string = "holeAtURL"
-@module("./url_parameters") external nNextAtURL: int = "nNextAtURL"
-@module("./url_parameters") external programAtURL: string = "programAtURL"
-@module("./url_parameters") external gcAtURL: bool = "gcAtURL"
-@module("./url_parameters") external readOnlyMode: bool = "readOnlyMode"
-@module("./url_parameters")
+@module("./url_parameters.js") external syntaxAtURL: string = "syntaxAtURL"
+@module("./url_parameters.js") external printTopLevelAtURL: bool = "printTopLevelAtURL"
+@module("./url_parameters.js") external randomSeedAtURL: string = "randomSeedAtURL"
+@module("./url_parameters.js") external holeAtURL: string = "holeAtURL"
+@module("./url_parameters.js") external nNextAtURL: int = "nNextAtURL"
+@module("./url_parameters.js") external programAtURL: string = "programAtURL"
+@module("./url_parameters.js") external gcAtURL: bool = "gcAtURL"
+@module("./url_parameters.js") external readOnlyMode: bool = "readOnlyMode"
+@module("./url_parameters.js")
 external make_url: (string, string, string, int, string, bool, bool, bool) => string = "make_url"
 @scope("window") @val external openPopUp: string => unit = "openPopUp"
 

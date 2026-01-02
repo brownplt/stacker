@@ -4,7 +4,7 @@ open! Primitive
 
 type primitive = Primitive.t
 
-@module("./random") external make_random: string => unit => float = "make_random"
+@module("./random.js") external make_random: string => unit => float = "make_random"
 
 let randomIntOfRandom = random => {
   let f = (start, end) => {

@@ -1,25 +1,25 @@
 module SMoLCodeMirror = {
-  @react.component @module("./my-code-mirror_smol")
+  @react.component @module("./my-code-mirror_smol.js")
   external make: (~value: string, ~readOnly: bool, ~onChange: string => unit) => React.element =
     "default"
 }
 module JavaScriptCodeMirror = {
-  @react.component @module("./my-code-mirror_javascript")
+  @react.component @module("./my-code-mirror_javascript.js")
   external make: (~value: string, ~readOnly: bool, ~onChange: string => unit) => React.element =
     "default"
 }
 module PythonCodeMirror = {
-  @react.component @module("./my-code-mirror_python")
+  @react.component @module("./my-code-mirror_python.js")
   external make: (~value: string, ~readOnly: bool, ~onChange: string => unit) => React.element =
     "default"
 }
 module CommonCodeMirror = {
-  @react.component @module("./my-code-mirror_common")
+  @react.component @module("./my-code-mirror_common.js")
   external make: (~value: string, ~readOnly: bool, ~onChange: string => unit) => React.element =
     "default"
 }
 module ScalaCodeMirror = {
-  @react.component @module("./my-code-mirror_scala")
+  @react.component @module("./my-code-mirror_scala.js")
   external make: (~value: string, ~readOnly: bool, ~onChange: string => unit) => React.element =
     "default"
 }

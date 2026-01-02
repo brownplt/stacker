@@ -10,7 +10,7 @@ Everything else comes from the default webpack.config.js found on
 const path = require('path');
 
 module.exports = {
-  entry: './src/index.bs.js',
+  entry: './src/index.mjs',
   output: {
     filename: 'main.js',
     path: path.resolve(__dirname, 'dist'),
