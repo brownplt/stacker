@@ -1018,20 +1018,20 @@ and doEv = (exp: expression<printAnn>, stk: stack) =>
       )
       return(v)(stk)
     }
-  | GLam(xs, b) => {
-      let v = makeFun(
-        true,
-        Js.List.toVector(xs),
-        b,
-        current_env(stk),
-        {
-          nodeKind: Expression,
-          sourceLocation: exp.ann.sourceLocation,
-        },
-        exp.ann.print,
-      )
-      return(v)(stk)
-    }
+  // | GLam(xs, b) => {
+  //     let v = makeFun(
+  //       true,
+  //       Js.List.toVector(xs),
+  //       b,
+  //       current_env(stk),
+  //       {
+  //         nodeKind: Expression,
+  //         sourceLocation: exp.ann.sourceLocation,
+  //       },
+  //       exp.ann.print,
+  //     )
+  //     return(v)(stk)
+  //   }
   | Let(LetKind.Plain, xes, b) => transitionLet(exp.ann, list{}, xes, b, stk)
   | Let(LetKind.Nested, _xes, _b) =>
     raiseRuntimeError(AnyError("let* is no longer supported, please use nested let instead."))

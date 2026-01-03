@@ -14,8 +14,7 @@
   ],
   "suffix": ".mjs",
   "jsx": {
-    "version": 4,
-    "mode": "classic"
+    "version": 4
   },
   "bs-dependencies": [
     "@rescript/core",

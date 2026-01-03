@@ -12,7 +12,6 @@ expression {
   kw<"else"> |
   kw<"begin"> |
   kw<"lambda"> |
-  kw<"generator"> |
   kw<"λ"> |
   Identifier |
   String |

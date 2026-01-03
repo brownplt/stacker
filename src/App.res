@@ -1,5 +1,6 @@
 open SMoL
 open Render
+open Statics
 
 @module("./url_parameters.js") external syntaxAtURL: string = "syntaxAtURL"
 @module("./url_parameters.js") external printTopLevelAtURL: bool = "printTopLevelAtURL"
@@ -185,27 +186,34 @@ let make = () => {
         None
       }
 
-    | program => {
-        open SExpression
-        let s: Runtime.state = Runtime.load(
-          program,
-          randomSeed.randomSeed,
-          printTopLevel,
-          recycleHeapBoxes,
-        )
-        let srcMap: kindedSourceLocation => option<sourceLocation> = {
-          let map = program.ann.print->Print.toSourceMap(stringOfKindedSourceLocation)
-          srcLoc => {
-            Map.get(map, stringOfKindedSourceLocation(srcLoc))
-          }
+    | program =>
+      switch checkYieldOnlyInGenerator(program, ann => ann.sourceLocation) {
+      | Some(err) => {
+          setParseFeedback(_ => err)
+          None
         }
-        Some({
-          prevs: list{},
-          nexts: list{},
-          now: Render.render(syntax, hole, s, srcMap),
-          latestState: s,
-          srcMap,
-        })
+      | None => {
+          open SExpression
+          let s: Runtime.state = Runtime.load(
+            program,
+            randomSeed.randomSeed,
+            printTopLevel,
+            recycleHeapBoxes,
+          )
+          let srcMap: kindedSourceLocation => option<sourceLocation> = {
+            let map = program.ann.print->Print.toSourceMap(stringOfKindedSourceLocation)
+            srcLoc => {
+              Map.get(map, stringOfKindedSourceLocation(srcLoc))
+            }
+          }
+          Some({
+            prevs: list{},
+            nexts: list{},
+            now: Render.render(syntax, hole, s, srcMap),
+            latestState: s,
+            srcMap,
+          })
+        }
       }
     }
   }
