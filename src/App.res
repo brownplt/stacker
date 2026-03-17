@@ -134,7 +134,6 @@ let make = () => {
     setParseFeedback(_ => "")
     rawSetProgram(setter)
   }
-  let (nNext, setNNext) = React.useState(_ => 0)
   let (syntax, setSyntax) = React.useState(_ => {
     Syntax.fromString(syntaxAtURL)->Option.getOr(Lispy)
   })
@@ -179,6 +178,22 @@ let make = () => {
       })
     }
   }
+  let backward = state =>
+    switch state {
+    | None => raise(Impossible)
+    | Some({prevs, now, nexts, latestState, srcMap}) =>
+      switch prevs {
+      | list{} => raise(Impossible)
+      | list{e, ...prevs} => Some({prevs, now: e, nexts: list{now, ...nexts}, latestState, srcMap})
+      }
+    }
+  let nextable = state =>
+    switch state {
+    | None => false
+    | Some({prevs: _, now: _, nexts: list{}, latestState: Terminated(_)}) => false
+    | Some({prevs: _, now: _, nexts: list{}, latestState: Continuing(_)}) => true
+    | Some({prevs: _, now: _, nexts: list{_e, ..._nexts}, latestState: _}) => true
+    }
   let loadProgram = program => {
     switch translateProgramFull(syntax, printTopLevel, program) {
     | exception SMoLTranslateError(err) => {
@@ -223,7 +238,6 @@ let make = () => {
     if nNextAtURL < 0 {
       None
     } else {
-      setNNext(_ => nNextAtURL)
       let s = ref(loadProgram(programAtURL))
       for _ in 1 to nNextAtURL {
         s.contents = forward(s.contents)
@@ -231,9 +245,9 @@ let make = () => {
       s.contents
     }
   })
+  let nNext = state->Option.mapOr(0, ({prevs}) => prevs->List.length)
   let onRunClick = _evt => {
     setState(_ => loadProgram(program))
-    setNNext(_ => 0)
   }
   let onStopClick = _evt => {
     setState(_ => None)
@@ -247,29 +261,34 @@ let make = () => {
     }
   }
   let onPrevClick = _evt => {
-    setNNext(nNext => nNext - 1)
-    setState(state =>
-      switch state {
-      | None => raise(Impossible)
-      | Some({prevs, now, nexts, latestState, srcMap}) =>
-        switch prevs {
-        | list{} => raise(Impossible)
-        | list{e, ...prevs} =>
-          Some({prevs, now: e, nexts: list{now, ...nexts}, latestState, srcMap})
-        }
-      }
-    )
+    setState(backward)
   }
   let onNextClick = _evt => {
-    setNNext(nNext => nNext + 1)
     setState(forward)
   }
-  let nextable = switch state {
-  | None => false
-  | Some({prevs: _, now: _, nexts: list{}, latestState: Terminated(_)}) => false
-  | Some({prevs: _, now: _, nexts: list{}, latestState: Continuing(_)}) => true
-  | Some({prevs: _, now: _, nexts: list{_e, ..._nexts}, latestState: _}) => true
+  let is_running = state != None
+  let onRunAndNextX99 = _ => {
+    setState(state => {
+      let rec forwardN = (n, s) => {
+        if n === 0 {
+          s
+        } else if nextable(s) {
+          forwardN(n - 1, forward(s))
+        } else {
+          s
+        }
+      }
+      forwardN(
+        99,
+        if is_running {
+          state
+        } else {
+          loadProgram(program)
+        },
+      )
+    })
   }
+  let nextable = nextable(state)
   let onShare = readOnlyMode => _ => {
     openPopUp(
       make_url(
@@ -294,7 +313,6 @@ let make = () => {
       onNextClick(evt)
     }
   }
-  let is_running = state != None
   let runButton =
     <button onClick=onRunClick disabled={is_running}>
       <span ariaHidden={true}> {React.string("▶ ")} </span>
@@ -316,6 +334,25 @@ let make = () => {
       <span ariaHidden={true}> {React.string("⏭ ")} </span>
       {React.string("Next")}
       // <kbd> {React.string("k")} </kbd>
+    </button>
+  let runAndNextX99 =
+    <button onClick=onRunAndNextX99>
+      <span ariaHidden={true}>
+        {React.string(
+          if is_running {
+            "⏭ "
+          } else {
+            "▶ "
+          },
+        )}
+      </span>
+      {React.string(
+        if is_running {
+          "Next×99"
+        } else {
+          "Run and Next×99"
+        },
+      )}
     </button>
   let editorConfig = if readOnlyMode {
     <> </>
@@ -567,6 +604,7 @@ let make = () => {
         }}
         <li> {prevButton} </li>
         <li> {nextButton} </li>
+        <li> {runAndNextX99} </li>
         <li>
           <button onClick={onShare(readOnlyMode)} disabled={!is_running}>
             <span ariaHidden={true}> {React.string("🔗 ")} </span>
