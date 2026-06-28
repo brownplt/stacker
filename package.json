@@ -12,8 +12,8 @@
     "webpack": "npx webpack --mode development",
     "webpack-build": "npx webpack --mode production",
     "publish": "rm -rf ../smol-tutor/docs/stacker && cp -r ./dist ../smol-tutor/docs/stacker",
-    "publish-as-testing": "rm -rf ./docs/testing && cp -r ./dist ./docs/testing",
-    "localhost": "python -m http.server --directory dist"
+    "publish-as-testing": "rm -rf ../smol-tutor/docs/stacker/prerelease && cp -r ./dist ../smol-tutor/docs/stacker/prerelease",
+    "localhost": "npx http-server dist"
   },
   "keywords": [
     "rescript"
@@ -26,7 +26,6 @@
     "@rescript/core": "^1.5.2",
     "@rescript/react": "^0.13.0",
     "@uiw/react-codemirror": "^4.19.9",
-    "leader-line": "^1.0.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "rescript": "^11.1.3"

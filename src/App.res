@@ -336,7 +336,7 @@ let make = () => {
       // <kbd> {React.string("k")} </kbd>
     </button>
   let runAndNextX99 =
-    <button onClick=onRunAndNextX99>
+    <button onClick=onRunAndNextX99 disabled={is_running && !nextable}>
       <span ariaHidden={true}>
         {React.string(
           if is_running {
@@ -608,13 +608,7 @@ let make = () => {
         <li>
           <button onClick={onShare(readOnlyMode)} disabled={!is_running}>
             <span ariaHidden={true}> {React.string("🔗 ")} </span>
-            {React.string(
-              if readOnlyMode {
-                "Share"
-              } else {
-                "Share This Configuration"
-              },
-            )}
+            {React.string("Share")}
           </button>
         </li>
         {if readOnlyMode {
@@ -637,7 +631,7 @@ let make = () => {
           <li>
             <button onClick={onShare(true)} disabled={!is_running}>
               <span ariaHidden={true}> {React.string("🔗 ")} </span>
-              {React.string("Share Read-only Version")}
+              {React.string("Share (read-only)")}
             </button>
           </li>
         }}
