@@ -277,9 +277,9 @@ details>summary~* {
     outline: 1ex solid red;
 }
 
-.ref, .def {
-    /* font-weight: bold;
-    color: grey; */
+.ref.highlight {
+    outline: none;
+    background-color: #fff8a8;
 }
 
 #program-source {

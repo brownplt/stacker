@@ -163,9 +163,11 @@ let blank = (~marked=false, s) => {
             className={`ref ref-${address}`}
             onMouseEnter={_ => {
               highlight(`#def-${address}`)
+              highlight(`.ref-${address}`)
             }}
             onMouseLeave={_ => {
               lowlight(`#def-${address}`)
+              lowlight(`.ref-${address}`)
             }}>
             {React.string(s)}
           </span>
