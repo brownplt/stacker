@@ -30,6 +30,26 @@ export const make_url = (syntax, randomSeed, hole, nNext, program, readOnlyMode,
     return `${urlBase}?${params.toString()}`;
 };
 
+export const replace_url = (syntax, randomSeed, hole, nNext, program, readOnlyMode, gc, printTopLevel) => {
+    const params = new URLSearchParams();
+    params.set('syntax', syntax);
+    params.set('randomSeed', randomSeed);
+    params.set('hole', hole);
+    params.set('nNext', nNext);
+    params.set('program', program);
+    if (readOnlyMode) {
+        params.set('readOnlyMode', "");
+    }
+    if (gc) {
+        params.set('gc', "");
+    }
+    if (!printTopLevel) {
+        params.set('printOnRequest', "");
+    }
+    const url = `${urlBase}?${params.toString()}`;
+    window.history.replaceState(null, document.title, url);
+};
+
 // console.log(
 // "syntaxAtURL", syntaxAtURL,
 // "randomSeedAtURL", randomSeedAtURL,

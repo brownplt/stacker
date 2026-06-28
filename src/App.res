@@ -12,6 +12,8 @@ open Statics
 @module("./url_parameters.js") external readOnlyMode: bool = "readOnlyMode"
 @module("./url_parameters.js")
 external make_url: (string, string, string, int, string, bool, bool, bool) => string = "make_url"
+@module("./url_parameters.js")
+external replace_url: (string, string, string, int, string, bool, bool, bool) => unit = "replace_url"
 @scope("window") @val external openPopUp: string => unit = "openPopUp"
 
 exception Impossible
@@ -246,6 +248,31 @@ let make = () => {
     }
   })
   let nNext = state->Option.mapOr(0, ({prevs}) => prevs->List.length)
+  React.useEffect(
+    () => {
+      replace_url(
+        syntax->Syntax.toString,
+        randomSeed.randomSeed,
+        hole,
+        nNext,
+        program,
+        readOnlyMode,
+        recycleHeapBoxes,
+        printTopLevel,
+      )
+      None
+    },
+    (
+      syntax->Syntax.toString,
+      randomSeed.randomSeed,
+      hole,
+      nNext,
+      program,
+      readOnlyMode,
+      recycleHeapBoxes,
+      printTopLevel,
+    ),
+  )
   let onRunClick = _evt => {
     setState(_ => loadProgram(program))
   }
