@@ -139,6 +139,8 @@ and contextFrameNode =
     )
   | Bgn1((unit, sourceLocation), list<expression<printAnn>>, expression<printAnn>)
   | While1((unit, sourceLocation), list<expression<printAnn>>, expression<printAnn>)
+  | And1((unit, sourceLocation), list<expression<printAnn>>)
+  | Or1((unit, sourceLocation), list<expression<printAnn>>)
 and contextFrame = annotated<contextFrameNode, printAnn>
 
 type frame<'base> = {ctx: pile<contextFrame, 'base>, env: environment}
@@ -159,6 +161,8 @@ let holeOfFrame = (f: contextFrame): sourceLocation => {
   | Cnd1(((), srcLoc), _, _, _) => srcLoc
   | Bgn1(((), srcLoc), _, _) => srcLoc
   | While1(((), srcLoc), _, _) => srcLoc
+  | And1(((), srcLoc), _) => srcLoc
+  | Or1(((), srcLoc), _) => srcLoc
   }
 }
 
@@ -174,6 +178,8 @@ let valuesOfFrame = (f: contextFrame): list<(value, sourceLocation)> => {
   | Cnd1(_, _, _, _) => list{}
   | Bgn1(_, _, _) => list{}
   | While1(_, _, _) => list{}
+  | And1(_, _) => list{}
+  | Or1(_, _) => list{}
   }
 }
 
@@ -974,6 +980,16 @@ and handleCtxFrame = (v: value, ctxFrame, stk: stack) => {
     | false => return(Con(Uni))(stk)
     }
   | Bgn1(((), _srcLoc), es, e) => transitionBgn(ctxFrame.ann, es, e, stk)
+  | And1(((), _srcLoc), exps) =>
+    switch asLgc(v) {
+    | true => transitionAnd(ctxFrame.ann, exps, stk)
+    | false => return(Con(Lgc(false)))(stk)
+    }
+  | Or1(((), _srcLoc), exps) =>
+    switch asLgc(v) {
+    | true => return(Con(Lgc(true)))(stk)
+    | false => transitionOr(ctxFrame.ann, exps, stk)
+    }
   | Yield1((), _srcLoc) =>
     // switch stk {}
     Continuing(
@@ -1074,8 +1090,8 @@ and doEv = (exp: expression<printAnn>, stk: stack) =>
         stk,
       ),
     )
-  | And(_es) => raiseRuntimeError(WIP("logical and"))
-  | Or(_es) => raiseRuntimeError(WIP("logical or"))
+  | And(es) => transitionAnd(exp.ann, es, stk)
+  | Or(es) => transitionOr(exp.ann, es, stk)
   | While(e_cnd, es_thn) =>
     doEv(
       e_cnd,
@@ -1256,6 +1272,18 @@ and transitionCnd = (ann, ebs, ob, stk: stack) => {
         ),
       )
     }
+  }
+}
+and transitionAnd = (ann, es, stk: stack) => {
+  switch es {
+  | list{} => return(Con(Lgc(true)))(stk)
+  | list{e, ...exps} => doEv(e, consCtx({it: And1(((), e.ann.sourceLocation), exps), ann}, stk))
+  }
+}
+and transitionOr = (ann, es, stk: stack) => {
+  switch es {
+  | list{} => return(Con(Lgc(false)))(stk)
+  | list{e, ...exps} => doEv(e, consCtx({it: Or1(((), e.ann.sourceLocation), exps), ann}, stk))
   }
 }
 and transitionBgn = (ann, es, e, stk: stack) => {
