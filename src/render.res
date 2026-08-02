@@ -431,7 +431,7 @@ let render = (sk, holeText, s, srcMap: kindedSourceLocation => option<sourceLoca
     | VFun({id, isGen, sourceLocation: ann, print, env}) => {
         let id = id->Int.toString
         let ann = if sk != Lispy {
-          srcMap(ann)->Option.getOr(ann.sourceLocation)
+          srcMap(ann)->Option.getOr({begin: {ln: 0, ch: 0}, end: {ln: 0, ch: 0}})
         } else {
           ann.sourceLocation
         }

@@ -1174,7 +1174,7 @@ and transitionBlock = ({it: b, ann}: block<printAnn>, isGen, env: environment, s
             env,
             {
               nodeKind: Definition,
-              sourceLocation: ann.sourceLocation,
+              sourceLocation: t.ann.sourceLocation,
             },
             d.ann.print,
           )
