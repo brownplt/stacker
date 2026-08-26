@@ -76,6 +76,16 @@ module Syntax = {
     }
   }
   let all = [Lispy, Python, JavaScript, Pseudo, Scala, Rhombus]
+
+  /// Whether a program can be *read* in this syntax, not only presented in it.
+  /// The other four have printers but no parser.
+  let isReadable = t =>
+    switch t {
+    | Lispy | Rhombus => true
+    | Python | JavaScript | Pseudo | Scala => false
+    }
+
+  let readable = all->Array.filter(isReadable)
 }
 
 let id = x => x

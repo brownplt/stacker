@@ -3,6 +3,7 @@ open Render
 open Statics
 
 @module("./url_parameters.js") external syntaxAtURL: string = "syntaxAtURL"
+@module("./url_parameters.js") external inputSyntaxAtURL: string = "inputSyntaxAtURL"
 @module("./url_parameters.js") external printTopLevelAtURL: bool = "printTopLevelAtURL"
 @module("./url_parameters.js") external randomSeedAtURL: string = "randomSeedAtURL"
 @module("./url_parameters.js") external holeAtURL: string = "holeAtURL"
@@ -11,7 +12,8 @@ open Statics
 @module("./url_parameters.js") external gcAtURL: bool = "gcAtURL"
 @module("./url_parameters.js") external readOnlyMode: bool = "readOnlyMode"
 @module("./url_parameters.js")
-external make_url: (string, string, string, int, string, bool, bool, bool) => string = "make_url"
+external make_url: (string, string, string, string, int, string, bool, bool, bool) => string =
+  "make_url"
 @module("./url_parameters.js")
 external replace_url: (string, string, string, int, string, bool, bool, bool) => unit = "replace_url"
 @scope("window") @val external openPopUp: string => unit = "openPopUp"
@@ -83,32 +85,44 @@ type state = {
 
 type randomSeedConfig = {isSet: bool, randomSeed: string}
 
-let translateProgram = (sk, printTopLevel, p) => {
-  open Render.Syntax
+let inputLanguage = (sk: Render.Syntax.t): SMoL.Language.t => {
   switch sk {
-  | Lispy => SMoL.SMoLTranslator.translateProgram(printTopLevel, p)
-  | Python => SMoL.PYTranslator.translateProgram(printTopLevel, p)
-  | JavaScript => SMoL.JSTranslator.translateProgram(printTopLevel, p)
-  | Pseudo => SMoL.PCTranslator.translateProgram(printTopLevel, p)
-  | Scala => SMoL.SCTranslator.translateProgram(printTopLevel, p)
-  | Rhombus => SMoL.translateProgram(~input=SMoL, ~output=Rhombus, printTopLevel, p)
+  | Rhombus => Rhombus
+  | _ => SMoL
   }
 }
 
-let translateProgramFull = (sk, printTopLevel, p) => {
-  open Render.Syntax
+let outputLanguage = (sk: Render.Syntax.t): SMoL.Language.t => {
   switch sk {
-  | Lispy => SMoL.SMoLTranslator.translateProgramFull(printTopLevel, p)
-  | Python => SMoL.PYTranslator.translateProgramFull(printTopLevel, p)
-  | JavaScript => SMoL.JSTranslator.translateProgramFull(printTopLevel, p)
-  | Pseudo => SMoL.PCTranslator.translateProgramFull(printTopLevel, p)
-  | Scala => SMoL.SCTranslator.translateProgramFull(printTopLevel, p)
-  | Rhombus => SMoL.translateProgramFull(~input=SMoL, ~output=Rhombus, printTopLevel, p)
+  | Lispy => SMoL
+  | Rhombus => Rhombus
+  | Python => Python
+  | JavaScript => JavaScript
+  | Pseudo => PseudoCode
+  | Scala => Scala
   }
 }
 
-let make_preview = (sk: Syntax.t, printTopLevel, program) => {
-  switch translateProgram(sk, printTopLevel, program) {
+let translateProgram = (~input, sk, printTopLevel, p) => {
+  SMoL.translateProgram(
+    ~input=inputLanguage(input),
+    ~output=outputLanguage(sk),
+    printTopLevel,
+    p,
+  )
+}
+
+let translateProgramFull = (~input, sk, printTopLevel, p) => {
+  SMoL.translateProgramFull(
+    ~input=inputLanguage(input),
+    ~output=outputLanguage(sk),
+    printTopLevel,
+    p,
+  )
+}
+
+let make_preview = (~input, sk: Syntax.t, printTopLevel, program) => {
+  switch translateProgram(~input, sk, printTopLevel, program) {
   | program =>
     <>
       <span>
@@ -140,6 +154,22 @@ let make = () => {
   }
   let (syntax, setSyntax) = React.useState(_ => {
     Syntax.fromString(syntaxAtURL)->Option.getOr(Lispy)
+  })
+  let (inputSyntax, setInputSyntax) = React.useState(_ => {
+    Syntax.fromString(inputSyntaxAtURL)->Option.filter(Syntax.isReadable)->Option.getOr(Lispy)
+  })
+  // Reading Rhombus runs a WebAssembly parser, and a browser will not compile a
+  // module that size synchronously. Start it as the page loads so it is ready
+  // before anyone can choose Rhombus, and report the wait rather than a parse
+  // error if they get there first.
+  let (readerReady, setReaderReady) = React.useState(_ => SMoL.RhombusReader.isReady())
+  React.useEffect0(() => {
+    if !SMoL.RhombusReader.isReady() {
+      SMoL.RhombusReader.init()
+      ->Promise.thenResolve(() => setReaderReady(_ => true))
+      ->Promise.done
+    }
+    None
   })
   let (printTopLevel, setPrintTopLevel) = React.useState(_ => printTopLevelAtURL)
   let (recycleHeapBoxes, setRecycleHeapBoxes) = React.useState(_ => gcAtURL)
@@ -199,7 +229,7 @@ let make = () => {
     | Some({prevs: _, now: _, nexts: list{_e, ..._nexts}, latestState: _}) => true
     }
   let loadProgram = program => {
-    switch translateProgramFull(syntax, printTopLevel, program) {
+    switch translateProgramFull(~input=inputSyntax, syntax, printTopLevel, program) {
     | exception SMoLTranslateError(err) => {
         setParseFeedback(_ => TranslateError.toString(err))
         None
@@ -322,6 +352,7 @@ let make = () => {
     openPopUp(
       make_url(
         syntax->Syntax.toString,
+        inputSyntax->Syntax.toString,
         randomSeed.randomSeed,
         hole,
         nNext,
@@ -479,6 +510,35 @@ let make = () => {
       </details>
       <span>
         {React.string("Stacker will ")}
+        <em> {React.string("read")} </em>
+        {React.string(" the ")}
+        {
+          let onChange = evt => {
+            let newValue: string = ReactEvent.Form.currentTarget(evt)["value"]
+            let chosen = Syntax.fromString(newValue)->Option.getOr(Lispy)
+            setInputSyntax(_ => chosen)
+            // Presenting in a syntax a program cannot be read in is the point,
+            // but presenting Lispy while reading Rhombus hides what was typed,
+            // so follow the input unless the two were already apart.
+            setSyntax(prev =>
+              if prev == inputSyntax {
+                chosen
+              } else {
+                prev
+              }
+            )
+          }
+          <select onChange disabled={is_running}>
+            {React.array(
+              Syntax.readable->Array.map(s => {
+                <option selected={s == inputSyntax} value={Syntax.toString(s)}>
+                  {React.string({Syntax.toString(s)})}
+                </option>
+              }),
+            )}
+          </select>
+        }
+        {React.string(" syntax and ")}
         <em> {React.string("present")} </em>
         {React.string(" in the ")}
         {
@@ -497,6 +557,13 @@ let make = () => {
           </select>
         }
         {React.string(" syntax.")}
+        {if inputSyntax == Rhombus && !readerReady {
+          <span className="parse-feedback">
+            {React.string(" (Loading the Rhombus reader...)")}
+          </span>
+        } else {
+          React.null
+        }}
       </span>
       {if is_running {
         <p>
@@ -602,10 +669,10 @@ let make = () => {
           syntax={if is_running {
             syntax
           } else {
-            Lispy
+            inputSyntax
           }}
-          program={if is_running && syntax != Lispy {
-            translateProgram(syntax, printTopLevel, program)
+          program={if is_running && syntax != inputSyntax {
+            translateProgram(~input=inputSyntax, syntax, printTopLevel, program)
           } else {
             program
           }}
@@ -645,6 +712,7 @@ let make = () => {
             <a
               href={make_url(
                 syntax->Syntax.toString,
+                inputSyntax->Syntax.toString,
                 "",
                 hole,
                 -1,
@@ -679,7 +747,7 @@ let make = () => {
           {if syntax == Lispy {
             <> </>
           } else {
-            make_preview(syntax, printTopLevel, program)
+            make_preview(~input=inputSyntax, syntax, printTopLevel, program)
           }}
         </>
       | Some(s) => s.now
