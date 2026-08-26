@@ -43,6 +43,9 @@ let make = (~syntax, ~program, ~readOnly, ~setProgram) => {
   | Python => <PythonCodeMirror value=program readOnly={readOnly} onChange={onChange} />
   | Pseudo => <CommonCodeMirror value=program readOnly={readOnly} onChange={onChange} />
   | Scala => <ScalaCodeMirror value=program readOnly={readOnly} onChange={onChange} />
+  // Rhombus has no lezer grammar here yet, so it shares the generic
+  // highlighter with Pseudo rather than going unhighlighted.
+  | Rhombus => <CommonCodeMirror value=program readOnly={readOnly} onChange={onChange} />
   }
   // let onChange = evt => {
   //   let s = ReactEvent.Form.currentTarget(evt)["value"]

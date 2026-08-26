@@ -91,6 +91,7 @@ let translateProgram = (sk, printTopLevel, p) => {
   | JavaScript => SMoL.JSTranslator.translateProgram(printTopLevel, p)
   | Pseudo => SMoL.PCTranslator.translateProgram(printTopLevel, p)
   | Scala => SMoL.SCTranslator.translateProgram(printTopLevel, p)
+  | Rhombus => SMoL.translateProgram(~input=SMoL, ~output=Rhombus, printTopLevel, p)
   }
 }
 
@@ -102,6 +103,7 @@ let translateProgramFull = (sk, printTopLevel, p) => {
   | JavaScript => SMoL.JSTranslator.translateProgramFull(printTopLevel, p)
   | Pseudo => SMoL.PCTranslator.translateProgramFull(printTopLevel, p)
   | Scala => SMoL.SCTranslator.translateProgramFull(printTopLevel, p)
+  | Rhombus => SMoL.translateProgramFull(~input=SMoL, ~output=Rhombus, printTopLevel, p)
   }
 }
 
