@@ -23,7 +23,7 @@
   "license": "MIT",
   "dependencies": {
     "@brownplt/s-expression": "github:brownplt/s-expression",
-    "@brownplt/smol-translator": "github:brownplt/smol-translator#rhombus",
+    "@brownplt/smol-translator": "github:brownplt/smol-translator",
     "@rescript/core": "^1.5.2",
     "@rescript/react": "^0.13.0",
     "@uiw/react-codemirror": "^4.19.9",
