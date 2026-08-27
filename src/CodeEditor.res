@@ -23,6 +23,11 @@ module ScalaCodeMirror = {
   external make: (~value: string, ~readOnly: bool, ~onChange: string => unit) => React.element =
     "default"
 }
+module RhombusCodeMirror = {
+  @react.component @module("./my-code-mirror_rhombus.js")
+  external make: (~value: string, ~readOnly: bool, ~onChange: string => unit) => React.element =
+    "default"
+}
 
 @react.component
 let make = (~syntax, ~program, ~readOnly, ~setProgram) => {
@@ -43,6 +48,7 @@ let make = (~syntax, ~program, ~readOnly, ~setProgram) => {
   | Python => <PythonCodeMirror value=program readOnly={readOnly} onChange={onChange} />
   | Pseudo => <CommonCodeMirror value=program readOnly={readOnly} onChange={onChange} />
   | Scala => <ScalaCodeMirror value=program readOnly={readOnly} onChange={onChange} />
+  | Rhombus => <RhombusCodeMirror value=program readOnly={readOnly} onChange={onChange} />
   }
   // let onChange = evt => {
   //   let s = ReactEvent.Form.currentTarget(evt)["value"]

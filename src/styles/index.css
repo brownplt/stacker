@@ -62,10 +62,24 @@ section#stacker>article>section {
     padding-right: 1ex;
 }
 
+/* Each control carries an icon, and the icons are not one family: the transport
+   symbols (▶ ⏹ ⏮ ⏭) are geometric shapes with text presentation, while 🔗 and
+   ⚙️ are emoji and render taller. A button sized to its contents therefore came
+   out a different height depending on which glyph was inside, so Run and Stop
+   never lined up. Fixing the box takes the glyph out of the question; a button
+   centres its own contents, so the label stays put. */
+button {
+    height: 2.25em;
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+
 menu {
     display: inline-flex;
     flex-wrap: wrap;
     flex-direction: row;
+    /* Share a centre line rather than stretching each item to the tallest. */
+    align-items: center;
     padding: 0;
     margin: 0;
 }

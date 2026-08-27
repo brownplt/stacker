@@ -1,0 +1,73 @@
+// A CodeMirror mode for the Rhombus subset the translator emits.
+//
+// This is a highlighting grammar, not a shrubbery parser: it recognises tokens
+// and bracket nesting, and leaves the layout rules — which group a `|` or an
+// operator-led line belongs to — alone. That is the same scope as the other
+// modes here, and enough for colouring an editor.
+@top Program { expression* }
+
+expression {
+  kw<"def"> |
+  kw<"fun"> |
+  kw<"let"> |
+  kw<"mutable"> |
+  kw<"if"> |
+  kw<"cond"> |
+  kw<"while"> |
+  kw<"block"> |
+  Literal |
+  Keyword |
+  Number |
+  Identifier |
+  String |
+  Operator |
+  Bar |
+  Colon |
+  Comma |
+  Semicolon |
+  Application { "(" expression* ")" } |
+  Application { "[" expression* "]" } |
+  Application { "{" expression* "}" }
+}
+
+@tokens {
+  Identifier { $[a-zA-Z_] $[a-zA-Z_0-9]* }
+
+  // #true, #false, #void, #inf — the reader spells every self-quoting value
+  // this way.
+  Literal { "#" $[a-zA-Z]+ }
+
+  // ~else, and any other keyword argument.
+  Keyword { "~" $[a-zA-Z_] $[a-zA-Z_0-9]* }
+
+  Number { $[0-9] $[a-zA-Z_0-9.]* | "." $[0-9] $[a-zA-Z_0-9.]* }
+
+  String { '"' (!["\\] | "\\" _)* '"' }
+
+  LineComment { "//" ![\n]* }
+
+  // := == === != <= >= && || ++ + - * / ! .=
+  Operator { $[+\-*/<>=!&|.:] $[+\-*/<>=!&|.:]* }
+
+  Bar { "|" }
+  Colon { ":" }
+  Comma { "," }
+  Semicolon { ";" }
+
+  space { $[ \t\n\r]+ }
+
+  "(" ")"
+  "[" "]"
+  "{" "}"
+
+  // Lezer takes the longest match first, so `||` and `:=` still lex as one
+  // operator; precedence only settles the single-character tie, where a lone
+  // `|` is an alternative and a lone `:` opens a body.
+  @precedence { LineComment, Number, Bar, Colon, Operator }
+}
+
+kw<term> { @specialize[@name={term}]<Identifier, term> }
+
+@skip { space | LineComment }
+
+@detectDelim

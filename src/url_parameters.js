@@ -4,6 +4,7 @@ const queryString = window.location.search;
 const urlBase = window.location.href.replace(window.location.search, '');
 const urlParams = new URLSearchParams(queryString);
 export const syntaxAtURL = urlParams.get('syntax') || "";
+export const inputSyntaxAtURL = urlParams.get('inputSyntax') || "";
 export const randomSeedAtURL = urlParams.get('randomSeed') || "";
 export const holeAtURL = urlParams.get('hole') || "";
 export const nNextAtURL = parseInt(urlParams.get('nNext') || "-1");
@@ -11,9 +12,11 @@ export const programAtURL = urlParams.get('program') || "";
 export const readOnlyMode = urlParams.get('readOnlyMode') !== null;
 export const gcAtURL = urlParams.get('gc') !== null;
 export const printTopLevelAtURL = urlParams.get('printOnRequest') === null;
-export const make_url = (syntax, randomSeed, hole, nNext, program, readOnlyMode, gc, printTopLevel) => {
+export const make_url = (syntax, inputSyntax, randomSeed, hole, nNext, program, readOnlyMode, gc, printTopLevel) => {
     const params = new URLSearchParams();
     params.set('syntax', syntax);
+    // Without this a shared Rhombus program would be read as s-expressions.
+    params.set('inputSyntax', inputSyntax);
     params.set('randomSeed', randomSeed);
     params.set('hole', hole);
     params.set('nNext', nNext);

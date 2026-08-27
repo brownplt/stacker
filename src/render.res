@@ -48,6 +48,7 @@ module Syntax = {
     | JavaScript
     | Pseudo
     | Scala
+    | Rhombus
   let toString = t => {
     switch t {
     | Lispy => "Lispy"
@@ -55,6 +56,7 @@ module Syntax = {
     | JavaScript => "JavaScript"
     | Pseudo => "Pseudo"
     | Scala => "Scala"
+    | Rhombus => "Rhombus"
     }
   }
   let fromString = s => {
@@ -68,10 +70,22 @@ module Syntax = {
     | "Pseudo" => Some(Pseudo)
     | "SC" => Some(Scala)
     | "Scala" => Some(Scala)
+    | "RH" => Some(Rhombus)
+    | "Rhombus" => Some(Rhombus)
     | _ => None
     }
   }
-  let all = [Lispy, Python, JavaScript, Pseudo, Scala]
+  let all = [Lispy, Python, JavaScript, Pseudo, Scala, Rhombus]
+
+  /// Whether a program can be *read* in this syntax, not only presented in it.
+  /// The other four have printers but no parser.
+  let isReadable = t =>
+    switch t {
+    | Lispy | Rhombus => true
+    | Python | JavaScript | Pseudo | Scala => false
+    }
+
+  let readable = all->Array.filter(isReadable)
 }
 
 let id = x => x
@@ -201,6 +215,7 @@ let render = (sk, holeText, s, srcMap: kindedSourceLocation => option<sourceLoca
     | Python => PYPrinter.printName(x)
     | Pseudo => PCPrinter.printName(x)
     | Scala => SCPrinter.printName(x)
+    | Rhombus => RhombusPrinter.printName(x)
     }
 
   let printTerm = x =>
@@ -210,6 +225,7 @@ let render = (sk, holeText, s, srcMap: kindedSourceLocation => option<sourceLoca
     | Python => PYPrinter.printStandAloneTerm(x)
     | Pseudo => PCPrinter.printStandAloneTerm(x)
     | Scala => SCPrinter.printStandAloneTerm(x)
+    | Rhombus => RhombusPrinter.printStandAloneTerm(x)
     }
 
   let printOutput = x =>
@@ -219,6 +235,7 @@ let render = (sk, holeText, s, srcMap: kindedSourceLocation => option<sourceLoca
     | Python => PYPrinter.printOutput(~sep="\n", x)
     | Pseudo => PCPrinter.printOutput(~sep="\n", x)
     | Scala => SCPrinter.printOutput(~sep="\n", x)
+    | Rhombus => RhombusPrinter.printOutput(~sep="\n", x)
     }
 
   let dummyAnn = it => {
