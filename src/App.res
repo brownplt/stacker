@@ -348,6 +348,22 @@ let make = () => {
     })
   }
   let nextable = nextable(state)
+  // The examples are written as s-expressions. Put one in the editor in
+  // whatever syntax the editor is reading, transliterated rather than
+  // instrumented — the top-level printing setting applies when it is run, not
+  // when it is loaded.
+  let loadExample = source =>
+    setProgram(_ =>
+      if inputSyntax == Lispy {
+        source
+      } else {
+        switch translateProgram(~input=Lispy, inputSyntax, false, source) {
+        | translated => translated
+        | exception SMoLTranslateError(_) => source
+        }
+      }
+    )
+
   let onShare = readOnlyMode => _ => {
     openPopUp(
       make_url(
@@ -470,7 +486,7 @@ let make = () => {
             <button
               disabled={is_running}
               value="Fibonacci"
-              onClick={_evt => setProgram(_ => Programs.program_fib)}>
+              onClick={_evt => loadExample(Programs.program_fib)}>
               {React.string("Fibonacci")}
             </button>
           </li>
@@ -478,7 +494,7 @@ let make = () => {
             <button
               disabled={is_running}
               value="Scope"
-              onClick={_evt => setProgram(_ => Programs.program_dynscope)}>
+              onClick={_evt => loadExample(Programs.program_dynscope)}>
               {React.string("Scope")}
             </button>
           </li>
@@ -486,7 +502,7 @@ let make = () => {
             <button
               disabled={is_running}
               value="Counter"
-              onClick={_evt => setProgram(_ => Programs.program_ctr1)}>
+              onClick={_evt => loadExample(Programs.program_ctr1)}>
               {React.string("Counter")}
             </button>
           </li>
@@ -494,7 +510,7 @@ let make = () => {
             <button
               disabled={is_running}
               value="Aliasing"
-              onClick={_evt => setProgram(_ => Programs.program_aliasing)}>
+              onClick={_evt => loadExample(Programs.program_aliasing)}>
               {React.string("Aliasing")}
             </button>
           </li>
@@ -502,7 +518,7 @@ let make = () => {
             <button
               disabled={is_running}
               value="Object"
-              onClick={_evt => setProgram(_ => Programs.program_object)}>
+              onClick={_evt => loadExample(Programs.program_object)}>
               {React.string("Object")}
             </button>
           </li>
@@ -744,7 +760,9 @@ let make = () => {
             </button>
             {React.string(".")}
           </p>
-          {if syntax == Lispy {
+          // A preview is worth showing whenever the presentation differs from
+          // what was typed, which is no longer the same as "not Lispy".
+          {if syntax == inputSyntax {
             <> </>
           } else {
             make_preview(~input=inputSyntax, syntax, printTopLevel, program)
