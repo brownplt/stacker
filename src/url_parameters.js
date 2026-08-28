@@ -33,9 +33,10 @@ export const make_url = (syntax, inputSyntax, randomSeed, hole, nNext, program, 
     return `${urlBase}?${params.toString()}`;
 };
 
-export const replace_url = (syntax, randomSeed, hole, nNext, program, readOnlyMode, gc, printTopLevel) => {
+export const replace_url = (syntax, inputSyntax, randomSeed, hole, nNext, program, readOnlyMode, gc, printTopLevel) => {
     const params = new URLSearchParams();
     params.set('syntax', syntax);
+    params.set('inputSyntax', inputSyntax);
     params.set('randomSeed', randomSeed);
     params.set('hole', hole);
     params.set('nNext', nNext);

@@ -15,7 +15,8 @@ open Statics
 external make_url: (string, string, string, string, int, string, bool, bool, bool) => string =
   "make_url"
 @module("./url_parameters.js")
-external replace_url: (string, string, string, int, string, bool, bool, bool) => unit = "replace_url"
+external replace_url: (string, string, string, string, int, string, bool, bool, bool) => unit =
+  "replace_url"
 @scope("window") @val external openPopUp: string => unit = "openPopUp"
 
 exception Impossible
@@ -267,7 +268,14 @@ let make = () => {
     }
   }
   let (editorFontSize, setEditorFontSize) = React.useState(_ => FontSize.default)
-  let (state, setState) = React.useState(_ => {
+
+  // Reading Rhombus needs the WebAssembly reader, and on the very first render
+  // it is still compiling: the effect that starts it has not run yet. A shared
+  // link arrives with its program already in hand, so without this the link
+  // would report a parse failure for a program that is perfectly good.
+  let readerPending = inputSyntax == Rhombus && !readerReady
+
+  let bootstrapFromURL = () => {
     setProgram(_ => programAtURL)
     if nNextAtURL < 0 {
       None
@@ -278,24 +286,48 @@ let make = () => {
       }
       s.contents
     }
-  })
+  }
+
+  let (state, setState) = React.useState(_ =>
+    if readerPending {
+      None
+    } else {
+      bootstrapFromURL()
+    }
+  )
+  let (urlPending, setURLPending) = React.useState(_ => readerPending)
+  React.useEffect1(() => {
+    if urlPending && !readerPending {
+      let loaded = bootstrapFromURL()
+      setState(_ => loaded)
+      setURLPending(_ => false)
+    }
+    None
+  }, [readerReady])
   let nNext = state->Option.mapOr(0, ({prevs}) => prevs->List.length)
   React.useEffect(
     () => {
-      replace_url(
-        syntax->Syntax.toString,
-        randomSeed.randomSeed,
-        hole,
-        nNext,
-        program,
-        readOnlyMode,
-        recycleHeapBoxes,
-        printTopLevel,
-      )
+      // Not while the program is still waiting on the reader: rewriting the URL
+      // from an editor that has not been filled in yet would drop the very
+      // program the link carried.
+      if !urlPending {
+        replace_url(
+          syntax->Syntax.toString,
+          inputSyntax->Syntax.toString,
+          randomSeed.randomSeed,
+          hole,
+          nNext,
+          program,
+          readOnlyMode,
+          recycleHeapBoxes,
+          printTopLevel,
+        )
+      }
       None
     },
     (
       syntax->Syntax.toString,
+      inputSyntax->Syntax.toString,
       randomSeed.randomSeed,
       hole,
       nNext,
@@ -762,7 +794,7 @@ let make = () => {
           </p>
           // A preview is worth showing whenever the presentation differs from
           // what was typed, which is no longer the same as "not Lispy".
-          {if syntax == inputSyntax {
+          {if syntax == inputSyntax || readerPending {
             <> </>
           } else {
             make_preview(~input=inputSyntax, syntax, printTopLevel, program)
