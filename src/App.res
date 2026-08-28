@@ -510,20 +510,14 @@ let make = () => {
     <>
       <details>
         <summary>
-          {React.string("The program must be ")}
-          <em> {React.string("edited")} </em>
+          {React.string("A program can be ")}
+          <em> {React.string("written")} </em>
           {React.string(" in the ")}
-          // Which syntax that is now depends on what the program is read as,
-          // so naming Lispy here would contradict the reading menu below.
-          {switch inputSyntax {
-          | Lispy =>
-            <a
-              href="https://docs.google.com/document/d/e/2PACX-1vTMVCrUYliicrunyxftDwv6HVmBeKaRW9-VF9Xh1GUFoHMmomOczz_RRIZXPJoH8WB66x-d4GlRvwuy/pub">
-              {React.string("Lispy")}
-            </a>
-          | other => React.string(Syntax.toString(other))
-          }}
-          {React.string(" syntax.")}
+          <a
+            href="https://docs.google.com/document/d/e/2PACX-1vTMVCrUYliicrunyxftDwv6HVmBeKaRW9-VF9Xh1GUFoHMmomOczz_RRIZXPJoH8WB66x-d4GlRvwuy/pub">
+            {React.string("Lispy")}
+          </a>
+          {React.string(" or Rhombus syntax.")}
         </summary>
         {React.string("Example programs:")}
         <menu ariaLabel="a list of example programs">
