@@ -509,17 +509,7 @@ let make = () => {
   } else {
     <>
       <details>
-        <summary>
-          {React.string("A program can be ")}
-          <em> {React.string("written")} </em>
-          {React.string(" in the ")}
-          <a
-            href="https://docs.google.com/document/d/e/2PACX-1vTMVCrUYliicrunyxftDwv6HVmBeKaRW9-VF9Xh1GUFoHMmomOczz_RRIZXPJoH8WB66x-d4GlRvwuy/pub">
-            {React.string("Lispy")}
-          </a>
-          {React.string(" or Rhombus syntax.")}
-        </summary>
-        {React.string("Example programs:")}
+        <summary> {React.string("Example programs")} </summary>
         <menu ariaLabel="a list of example programs">
           <li>
             <button
@@ -583,15 +573,30 @@ let make = () => {
               }
             )
           }
-          <select value={Syntax.toString(inputSyntax)} onChange disabled={is_running}>
-            {React.array(
-              Syntax.readable->Array.map(s => {
-                <option value={Syntax.toString(s)}>
-                  {React.string({Syntax.toString(s)})}
-                </option>
-              }),
-            )}
-          </select>
+          <>
+            <select value={Syntax.toString(inputSyntax)} onChange disabled={is_running}>
+              {React.array(
+                Syntax.readable->Array.map(s => {
+                  <option value={Syntax.toString(s)}>
+                    {React.string({Syntax.toString(s)})}
+                  </option>
+                }),
+              )}
+            </select>
+            {switch inputSyntax {
+            | Lispy =>
+              <>
+                {React.string(" (")}
+                <a
+                  href="https://docs.google.com/document/d/e/2PACX-1vTMVCrUYliicrunyxftDwv6HVmBeKaRW9-VF9Xh1GUFoHMmomOczz_RRIZXPJoH8WB66x-d4GlRvwuy/pub">
+                  {React.string("reference")}
+                </a>
+                {React.string(")")}
+              </>
+            // Rhombus has no reference to point at from here yet.
+            | _ => React.null
+            }}
+          </>
         }
         {React.string(" syntax and ")}
         <em> {React.string("present")} </em>
