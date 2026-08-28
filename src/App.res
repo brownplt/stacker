@@ -157,7 +157,14 @@ let make = () => {
     Syntax.fromString(syntaxAtURL)->Option.getOr(Lispy)
   })
   let (inputSyntax, setInputSyntax) = React.useState(_ => {
-    Syntax.fromString(inputSyntaxAtURL)->Option.filter(Syntax.isReadable)->Option.getOr(Lispy)
+    // A link may name only `syntax`, which is the natural thing to write by
+    // hand. When that syntax can also be read, take it as the reading syntax
+    // too: a link saying Rhombus is carrying a Rhombus program. The four
+    // output-only syntaxes still fall back to s-expressions, as before.
+    switch Syntax.fromString(inputSyntaxAtURL)->Option.filter(Syntax.isReadable) {
+    | Some(readable) => readable
+    | None => Syntax.fromString(syntaxAtURL)->Option.filter(Syntax.isReadable)->Option.getOr(Lispy)
+    }
   })
   // Reading Rhombus runs a WebAssembly parser, and a browser will not compile a
   // module that size synchronously. Start it as the page loads so it is ready
@@ -576,10 +583,10 @@ let make = () => {
               }
             )
           }
-          <select onChange disabled={is_running}>
+          <select value={Syntax.toString(inputSyntax)} onChange disabled={is_running}>
             {React.array(
               Syntax.readable->Array.map(s => {
-                <option selected={s == inputSyntax} value={Syntax.toString(s)}>
+                <option value={Syntax.toString(s)}>
                   {React.string({Syntax.toString(s)})}
                 </option>
               }),
@@ -594,10 +601,10 @@ let make = () => {
             let newValue: string = ReactEvent.Form.currentTarget(evt)["value"]
             setSyntax(_ => Syntax.fromString(newValue)->Option.getOr(Lispy))
           }
-          <select onChange disabled={is_running}>
+          <select value={Syntax.toString(syntax)} onChange disabled={is_running}>
             {React.array(
               Syntax.all->Array.map(s => {
-                <option selected={s == syntax} value={Syntax.toString(s)}>
+                <option value={Syntax.toString(s)}>
                   {React.string({Syntax.toString(s)})}
                 </option>
               }),
