@@ -1049,8 +1049,7 @@ and doEv = (exp: expression<printAnn>, stk: stack) =>
   //     return(v)(stk)
   //   }
   | Let(LetKind.Plain, xes, b) => transitionLet(exp.ann, list{}, xes, b, stk)
-  | Let(LetKind.Nested, _xes, _b) =>
-    raiseRuntimeError(AnyError("let* is no longer supported, please use nested let instead."))
+  | Let(LetKind.Nested, xes, b) => transitionLetStar(exp.ann, xes, b, stk)
   | Let(LetKind.Recursive, xes, b) => transitionLetrec(exp.ann, xes, b, stk)
 
   | Bgn(es, e) => transitionBgn(exp.ann, es, e, stk)
@@ -1104,8 +1103,31 @@ and doEv = (exp: expression<printAnn>, stk: stack) =>
       ),
     )
   }
-and transitionLetrec = (_ann, _xes: list<bind<printAnn>>, _b: block<printAnn>, _stk: stack) => {
-  raiseRuntimeError(AnyError("letrec is no longer supported, please use let+defvar instead."))
+// `letrec` is a block whose definitions come first. Every name is in scope
+// before any right-hand side runs, which is exactly what lets them refer to
+// one another, and it is what "use let+defvar instead" asked people to write
+// by hand. Each definition keeps its binding's own annotation, so the stepper
+// points at the text the reader actually wrote.
+and transitionLetrec = (_ann, xes: list<bind<printAnn>>, b: block<printAnn>, stk: stack) => {
+  let b = xes->List.reduceReverse(b, (b, {it: (x, e), ann}) => {
+    let d: definition<printAnn> = {it: Var(x, e), ann}
+    {it: BCons({it: Def(d), ann}, b), ann}
+  })
+  Continuing(entering(Let, b, extend(current_env(stk), List.toArray(xsOfBlock(b))), stk))
+}
+// `let*` binds one name at a time, each right-hand side seeing the ones before
+// it, which is a `let` around a `let*` of what is left. Nesting it here rather
+// than adding a frame of its own reuses `let`'s stepping whole; the synthetic
+// forms carry the annotation of the `let*` they came from, so each step points
+// at the form the reader wrote.
+and transitionLetStar = (ann, xes: list<bind<printAnn>>, b: block<printAnn>, stk: stack) => {
+  switch xes {
+  | list{} => transitionLet(ann, list{}, list{}, b, stk)
+  | list{bind} => transitionLet(ann, list{}, list{bind}, b, stk)
+  | list{bind, ...rest} =>
+    let inner: expression<printAnn> = {it: Let(LetKind.Nested, rest, b), ann}
+    transitionLet(ann, list{}, list{bind}, {it: BRet(inner), ann: b.ann}, stk)
+  }
 }
 and transitionLet = (ann, xvs, xes: list<bind<printAnn>>, b, stk: stack) => {
   switch xes {
