@@ -108,6 +108,7 @@ let translateProgram = (~input, sk, printTopLevel, p) => {
   SMoL.translateProgram(
     ~input=inputLanguage(input),
     ~output=outputLanguage(sk),
+    ~preciseMutation=true,
     printTopLevel,
     p,
   )
@@ -117,6 +118,7 @@ let translateProgramFull = (~input, sk, printTopLevel, p) => {
   SMoL.translateProgramFull(
     ~input=inputLanguage(input),
     ~output=outputLanguage(sk),
+    ~preciseMutation=true,
     printTopLevel,
     p,
   )
