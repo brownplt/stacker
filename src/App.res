@@ -104,9 +104,6 @@ let outputLanguage = (sk: Render.Syntax.t): SMoL.Language.t => {
   }
 }
 
-// Stacker marks `mutable` only on variables that are actually assigned. SMoL
-// Tutor keeps the translator's imprecise default, because a precise annotation
-// would give away whether a program mutates a variable or a data structure.
 let translateProgram = (~input, sk, printTopLevel, p) => {
   SMoL.translateProgram(
     ~input=inputLanguage(input),
